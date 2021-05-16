@@ -21,6 +21,6 @@ spec:
         app: covid-vaccine-notification
     spec:
       containers:
-        - image:
+        - image: gcr.io/covid-19-vaccine-313902/github.com/biswastanmay/covid-19-cowin-api
           imagePullPolicy: IfNotPresent
           name: covid-vaccine-notification
