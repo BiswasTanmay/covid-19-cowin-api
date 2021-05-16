@@ -143,7 +143,12 @@
 				<groupId>com.google.cloud.tools</groupId>
 				<artifactId>appengine-maven-plugin</artifactId>
 				<version>2.4.0</version>
+				<configuration>
+					<deploy.projectId>covid-19-vaccine-313902</deploy.projectId>
+					<deploy.version>v1</deploy.version>
+				</configuration>
 			</plugin>
+
 		</plugins>
 		<finalName>Covid-19-Vaccine-Notification</finalName>
 	</build>
