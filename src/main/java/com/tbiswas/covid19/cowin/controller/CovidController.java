@@ -43,12 +43,24 @@ public class CovidController {
 	IEmailService emailService;
 
 	@PostMapping(value = "cowin")
-	public String searchAvilability(@RequestParam(value = "search", required = false) String pincode, Model model)
-			throws Exception {
-		
+	public String searchAvilability(@RequestParam(value = "search", required = false) String pincode,
+			@Validated String distBox, Model model) throws Exception {
+
 		Map<String, String> typeMap = new HashMap<String, String>();
-		typeMap.put(pincode, "N");
-		List<AvailableDto> availableList = covidServiceApi.getDetailsFromCowin(pincode,typeMap);
+		List<AvailableDto> availableList = new ArrayList<AvailableDto>();
+
+		if (distBox != null) {
+
+			String[] arrOfStr = distBox.split("_");
+			String distCode = arrOfStr[2];
+
+			typeMap.put(distCode, "Y");
+			availableList = covidServiceApi.getDetailsFromCowin(distCode, typeMap);
+		} else if (pincode != null) {
+			typeMap.put(pincode, "N");
+			availableList = covidServiceApi.getDetailsFromCowin(pincode, typeMap);
+		}
+
 		List<StateDto> states = getStateList();
 
 		model.addAttribute("stateList", states);
@@ -56,41 +68,47 @@ public class CovidController {
 		return "index";
 	}
 
-	@PostMapping(value = "subscribeByPin")
-	public String subscribeByPin(@RequestParam(value = "pincode", required = false) String pincode,
-
-			@RequestParam(value = "email", required = false) String email, Model model) throws Exception {
-
-		try {
-			String type = "N";
-			emailService.subscribeEmail(email, pincode,type);
-		} catch (Exception e) {
-			throw new Exception();
-		}
-
-		return "redirect:/cowin";
-
-	}
-
 	@PostMapping(value = "subscribe")
-	public String subscribe(@RequestParam(value = "district_id", required = false) String district_id,
-			@Validated String distBox,
-			// @RequestParam String distBox,
-			@RequestParam(value = "email", required = false) String email, Model model) throws Exception {
+	public String subscribeByPin(@RequestParam(value = "pincode", required = false) String pincode,
+			@Validated String distBox1, @RequestParam(value = "email", required = false) String email, Model model)
+			throws Exception {
 
 		try {
-			String type = "Y";
-			emailService.subscribeEmail(email, distBox,type);
+			String emailBody = null;
+			String type = null;
+			if (distBox1 != null) {
+
+				String[] arrOfStr = distBox1.split("_");
+				String stateName = arrOfStr[1];
+				String finalStatename = stateName.replace("-", " ");
+				String distCode = arrOfStr[2];
+				String distName = arrOfStr[3];
+
+				type = "Y";
+				emailService.subscribeEmail(email, distCode, type);
+				emailBody = "State: " + finalStatename + "," + "District: " + distName;
+
+				emailService.confirmationMail(emailBody, email);
+			} else if (pincode != null) {
+				type = "N";
+				emailBody = "Pincode: " + pincode;
+				emailService.subscribeEmail(email, pincode, type);
+				emailService.confirmationMail(emailBody, email);
+			}
+
 		} catch (Exception e) {
-			throw new Exception();
+
+			e.printStackTrace();
+			return "Please provide valid Input";
 		}
 
 		return "redirect:/cowin";
 
 	}
-	
+
 	@PostMapping(value = "unsubscribe")
-	public String unsubscribe(@RequestParam(value = "email", required = false) String email, Model model) throws Exception {
+	public String unsubscribe(@RequestParam(value = "email", required = false) String email, Model model)
+			throws Exception {
 
 		try {
 			emailService.unsubscribeEmail(email);
@@ -102,7 +120,7 @@ public class CovidController {
 
 	}
 
-	@GetMapping(value = "cowin")
+	@GetMapping(value = {"","cowin"})
 	public String landingPage(Model model) throws Exception {
 
 		List<StateDto> states = getStateList();
@@ -131,19 +149,20 @@ public class CovidController {
 
 	@GetMapping(value = "loadDistByState/{id}")
 	@ResponseBody
-	public ResponseEntity<?> loadDistByState(@PathVariable("id") int id, Model model) {
+	public ResponseEntity<?> loadDistByState(@PathVariable("id") String id, Model model) {
 		Document document1;
 		DistricListDto dist = new DistricListDto();
 		List<DistrictDto> distForState = new ArrayList<DistrictDto>();
 		ObjectMapper mapper = new ObjectMapper();
 		try {
-			String stateId = String.valueOf(id);
-			document1 = Jsoup.connect("https://cdn-api.co-vin.in/api/v2/admin/location/districts/" + stateId)
+
+			String[] arrOfStr = id.split("_");
+			String stateCode = arrOfStr[0];
+			document1 = Jsoup.connect("https://cdn-api.co-vin.in/api/v2/admin/location/districts/" + stateCode)
 					.ignoreContentType(true).get();
 			Elements bodyElement1 = document1.select("body");
 			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 			String body1 = bodyElement1.eachText().get(0);
-			System.out.println(body1);
 
 			dist = mapper.readValue(body1, DistricListDto.class);
 			distForState = Arrays.asList(dist.getDistricts());

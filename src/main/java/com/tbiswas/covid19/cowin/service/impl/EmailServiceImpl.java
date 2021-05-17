@@ -47,20 +47,13 @@ public class EmailServiceImpl implements IEmailService {
 	ICovidService covidServiceApi;
 
 	@Override
-	public MailResponse sendEmail(MailRequest request, Map<String, Object> model, String data, Map<String, String> typeMap) {
+	public MailResponse sendEmail(MailRequest request, Map<String, Object> model, Template t) {
 		MailResponse response = new MailResponse();
 		MimeMessage message = sender.createMimeMessage();
 		try {
 			// set mediaType
 			MimeMessageHelper helper = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
 					StandardCharsets.UTF_8.name());
-			// add attachment
-			Template t = config.getTemplate("email.ftl");
-			if (request.getName().equalsIgnoreCase("N")) {
-				t = config.getTemplate("email2.ftl");
-			}else if(typeMap.get(data).equalsIgnoreCase("Y")) {
-				t = config.getTemplate("email3.ftl");
-			}
 
 			String html = FreeMarkerTemplateUtils.processTemplateIntoString(t, model);
 
@@ -148,7 +141,7 @@ public class EmailServiceImpl implements IEmailService {
 			List<String> toList = new ArrayList<String>();
 			if (typeMap.get(data).equalsIgnoreCase("Y")) {
 				toList = distEmailMap.get(data);
-			} else if (typeMap.get(data).equalsIgnoreCase("N")){
+			} else if (typeMap.get(data).equalsIgnoreCase("N")) {
 				toList = pinEmailMap.get(data);
 			}
 
@@ -163,15 +156,16 @@ public class EmailServiceImpl implements IEmailService {
 				request.setName("Y");
 				model.put("State", availableList.get(0).getState());
 				model.put("Dist", availableList.get(0).getDistrict());
-				
-				sendEmail(request, model,data, typeMap);
+				Template t = selectTemplate(request, data, typeMap);
+				sendEmail(request, model, t);
 
 				System.out.println("+++++++++++++++++++++++++++++++++++++++Email Send with Data");
 
 			} else {
 				request.setSubject("Vaccine Not Available");
 				request.setName("N");
-				sendEmail(request, model,data, typeMap);
+				Template t = selectTemplate(request, data, typeMap);
+				sendEmail(request, model, t);
 				System.out.println("=============================Email Send with No data");
 			}
 
@@ -179,12 +173,54 @@ public class EmailServiceImpl implements IEmailService {
 
 	}
 
+	private Template selectTemplate(MailRequest request, String data, Map<String, String> typeMap) {
+		Template t = null;
+		try {
+			t = config.getTemplate("email.ftl");
+			if (request.getName().equalsIgnoreCase("N")) {
+				t = config.getTemplate("email2.ftl");
+			} else if (typeMap.get(data).equalsIgnoreCase("Y")) {
+				t = config.getTemplate("email3.ftl");
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return t;
+
+	}
+
 	@Override
 	@Transactional
 	public void unsubscribeEmail(String email) {
-		 String SQL = "delete from 5AP58VsI5W.T_SUBSCRIBE_EMAIL where EMAIL_ID = ?";
-		 jdbcTemplate.update(SQL, email);
-		
+		String SQL = "delete from 5AP58VsI5W.T_SUBSCRIBE_EMAIL where EMAIL_ID = ?";
+		jdbcTemplate.update(SQL, email);
+
+	}
+
+	@Override
+	public void confirmationMail(String emailBody, String email) {
+		MailRequest request = new MailRequest();
+		Map<String, Object> model = new HashMap<>();
+		Template t = null;
+		try {
+			
+			List<String> toList = new ArrayList<String>();
+			toList.add(email);
+			String[] toArr = new String[toList.size()];
+			toArr =  toList.toArray(toArr);
+			request.setFrom("learn.latest.tech.it@gmail.com");
+			request.setTo(toArr);
+			request.setSubject("Thank you for subscription!");
+			request.setName("Y");
+			t = config.getTemplate("confEmail.ftl");
+			model.put("bodyText", emailBody);
+			sendEmail(request, model, t);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 }

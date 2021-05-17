@@ -12,6 +12,14 @@
 	th:href="@{webjars/bootstrap/4.0.0-2/css/bootstrap.min.css} " />
 <script
 	src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<link rel="stylesheet"
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+<script
+	src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script
+	src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script
+	src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
 <script src="https://kit.fontawesome.com/a076d05300.js"></script>
 <script type="text/javascript">
 	$(document)
@@ -21,7 +29,9 @@
 						$('#stateBox')
 								.change(
 										function() {
-											var stateId = $(this).val();
+											var stateIdName = $(this).val();
+											var stateId = stateIdName.replace(
+													/\s+/g, "-");
 											$
 													.ajax({
 														type : 'GET',
@@ -32,7 +42,7 @@
 
 															var s = '';
 															for (var i = 0; i < result.length; i++) {
-																s += '<option value="'+result[i].district_id+'">'
+																s += '<option value="'+stateId+'_'+result[i].district_id+'_'+result[i].district_name+'">'
 																		+ result[i].district_name
 																		+ '</option>';
 															}
@@ -41,7 +51,42 @@
 														}
 													})
 										});
-					});
+					}
+
+			);
+
+	$(document)
+			.ready(
+					function() {
+
+						$('#stateBox1')
+								.change(
+										function() {
+											var stateIdName = $(this).val();
+											var stateId = stateIdName.replace(
+													/\s+/g, "-");
+											$
+													.ajax({
+														type : 'GET',
+														url : '/loadDistByState/'
+																+ stateId,
+														success : function(
+																result) {
+
+															var s = '';
+															for (var i = 0; i < result.length; i++) {
+																s += '<option value="'+stateId+'_'+result[i].district_id+'_'+result[i].district_name+'">'
+																		+ result[i].district_name
+																		+ '</option>';
+															}
+															$('#distBox1')
+																	.html(s);
+														}
+													})
+										});
+					}
+
+			);
 </script>
 <style>
 img {
@@ -53,12 +98,27 @@ img {
 	display: none;
 }
 
-* {
-	box-sizing: border-box
-}
-
 body {
 	font-family: "Lato", sans-serif;
+}
+
+input[type=text], input[type=submit], input[type=number] {
+	width: 100%;
+	padding: 12px;
+	margin: 8px 0;
+	display: inline-block;
+	border: 1px solid #ccc;
+	box-sizing: border-box;
+}
+
+input[type=submit] {
+	background-color: #04AA6D;
+	color: white;
+	border: none;
+}
+
+input[type=submit]:hover {
+	opacity: 0.8;
 }
 
 /* Style the tab */
@@ -67,9 +127,12 @@ body {
 	border: 1px solid #ccc;
 	background-color: #f1f1f1;
 	width: 30%;
-	height: 300px;
+	height: 480px;
 }
 
+* {
+	word-wrap: break-word;
+}
 /* Style the buttons inside the tab */
 .tab button {
 	display: block;
@@ -82,7 +145,8 @@ body {
 	text-align: left;
 	cursor: pointer;
 	transition: 0.3s;
-	font-size: 17px;
+	font-size: 15px;
+	word-wrap: break-word
 }
 
 /* Change background color of buttons on hover */
@@ -102,7 +166,72 @@ body {
 	border: 1px solid #ccc;
 	width: 70%;
 	border-left: none;
-	height: 300px;
+	height: 480px;
+}
+
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+	width: 100%;
+	border: 5px solid #ffff;
+}
+
+tr, td {
+	text-align: left;
+	padding: 8px;
+}
+
+select {
+	width: 100%;
+	padding: 12px;
+	margin: 8px 0;
+	display: inline-block;
+	border: 1px solid #ccc;
+	box-sizing: border-box;
+}
+
+#customers table{
+  border: 4px solid #ddd;
+  padding: 8px;
+}
+
+#customers {
+	font-family: Arial, Helvetica, sans-serif;
+	border-collapse: collapse;
+	width: 100%;
+}
+
+#customers td, #customers th {
+	border: 1px solid #ddd;
+	padding: 8px;
+}
+
+#customers tr:nth-child(even) {
+	background-color: #f2f2f2;
+}
+
+#customers tr:hover {
+	background-color: #ddd;
+}
+
+#customers th {
+	padding-top: 12px;
+	padding-bottom: 12px;
+	text-align: left;
+	background-color: #4CAF50;
+	color: white;
+}
+
+#mainTable th {
+	padding-top: 12px;
+	padding-bottom: 12px;
+	text-align: center;
+	background-color: #04AA6D;
+	color: white;
+}
+#mainTable td, #mainTable th {
+	border: 1px solid #ddd;
+	padding: 8px;
 }
 </style>
 </head>
@@ -110,164 +239,151 @@ body {
 
 	<div class="container">
 		<img th:src="@{/cvc.png}" align="center">
-		<div class="card-body">
 
+		<div class="card-body">
+			<h6 align=center>Search for Vaccine & Subscribe for next
+				available slot notification</h6>
 			<div class="tab">
-				<button class="tablinks" onclick="openCity(event, 'Paris')"
+				<button class="tablinks" onclick="openCity(event, 'stateDiv')"
 					id="defaultOpen">By State</button>
-				<button class="tablinks" onclick="openCity(event, 'London')">By
+				<button class="tablinks" onclick="openCity(event, 'pinDiv')">By
 					Pincode</button>
-				<button class="tablinks" onclick="openCity(event, 'Kolkata')">Cancel
+				<button class="tablinks" onclick="openCity(event, 'subsDiv')">Cancel
 					Subscription</button>
 
 			</div>
 
-			<div id="Kolkata" class="tabcontent">
+			<div id="subsDiv" class="tabcontent">
 
-				<h3>Cancel Subscription</h3>
+				<h5 align=center>Cancel Subscription</h5>
 				<form th:action="@{/unsubscribe}" method="post" align="center">
-					Email <input type="text" field="*{email}" th:name="email"
-						name="email" id="email" align="center"></input> <input
-						type="submit" class="btn btn-primary" value="Subscribe"
-						align="center">
+					<input type="text" field="*{email}" th:name="email" name="email"
+						id="email" align="center"
+						pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,3}$"
+						title="Please Provide the valid email" placeholder="Email"
+						required></input> <input type="submit" class="btn btn-primary"
+						value="Unsubscribe" align="center">
 				</form>
 
 			</div>
 
-			<div id="Paris" class="tabcontent">
-				<br>
-				<h3>Subscribe for Email Notification</h3>
-				<br>
-				<table>
+			<div id="stateDiv" class="tabcontent">
+
+				<div class="container" style="background-color: white">
+					<form th:action="@{/cowin}" method="post" align="center">
+						<select id="stateBox" required>
+							<option value="">Select State</option>
+							<option th:each="state : ${stateList}"
+								th:value="${state.state_id}+'_'+${state.state_name}"
+								th:text="${state.state_name}"></option>
+						</select> <select name="distBox" id="distBox" required><option
+								value="">Select Dist</option></select> <input type="submit"
+							class="btn btn-primary" value="Search" align="center">
+					</form>
+
+
+
+				</div>
+				<h5 align=center>Subscribe for Email Notification</h5>
+
+				<div class="container" style="background-color: white">
 					<form th:action="@{/subscribe}" method="post" align="center">
-
-						<tr>
-							<td>State <select id="stateBox">
-									<option value="">Select State</option>
-									<option th:each="state : ${stateList}"
-										th:value="${state.state_id}" th:text="${state.state_name}"></option>
-							</select>
-							</td>
-						</tr>
-						<tr>
-							<td>District <select name="distBox" id="distBox"></select>
-							</td>
-						</tr>
-					<tr>
-						<td>Email <input type="text" field="*{email}" th:name="email"
-							name="email" id="email" align="center"></input> <input
-							type="submit" class="btn btn-primary" value="Subscribe"
+						<select id="stateBox1" name="stateBox1" required>
+							<option value="">Select State</option>
+							<option th:each="state : ${stateList}"
+								th:value="${state.state_id}+'_'+${state.state_name}"
+								th:text="${state.state_name}"></option>
+						</select> <select name="distBox1" id="distBox1" required><option
+								value="">Select Dist</option></select> <input type="text"
+							placeholder="Email"
+							pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,3}$"
+							title="Please Provide the valid email" name="email" required>
+						<input type="submit" class="btn btn-primary" value="Subscribe"
 							align="center">
-						</td>
-					</tr>
 					</form>
-				</table>
-			</div>
-
-			<div id="London" class="tabcontent">
-				<table>
-					<tr>
-
-						<td></td>
-						<td></td>
-						<td></td>
-						<br>
-						<td align="left">Search by Pincode
-							<form action="#" th:action="@{/cowin}"
-								th:object="${availableList}" method="post" align="center">
-								<input type="text" field="*{search}" th:name="search"
-									name="search" id="search" align="center"></input> <input
-									type="submit" class="btn btn-primary" value="Check"
-									align="center">
-							</form>
-						</td>
-
-					</tr>
-
-
-				</table>
-				<br>
-				<h3>Subscribe for Email Notification</h3>
-				<table>
-					<form action="#" th:action="@{/subscribeByPin}"
-						th:object="${availableList}" method="post" align="center">
-						<tr>
-
-							<td>pincode</td>
-							<td><input type="text" field="*{pincode}" th:name="pincode"
-								name="pincode" id="pincode" align="center"></input></td>
-							<td>Email</td>
-							<td><input type="text" field="*{email}" th:name="email"
-								name="email" id="email" align="center"></input></td>
-							<td><input type="submit" class="btn btn-primary"
-								value="Subscribe" align="center"></td>
-						</tr>
-
-					</form>
-
-				</table>
-			</div>
-
-		</div>
-
-	</div>
-
-
-	<div class="container">
-		<div th:switch="${availableList}">
-			<br>
-			<div>
-				<table class="table">
-					<thead class="thead-dark">
-						<tr>
-							<th>Name</th>
-							<th>Address</th>
-
-						</tr>
-					</thead>
-
-
-
-					<tbody>
-
-						<div th:unless="${#lists.isEmpty(availableList)}">
-							<tr th:each="oxy : ${availableList}">
-								<td th:text="${oxy.name}"></td>
-								<td th:text="${oxy.address}"></td>
-								<td>
-									<div th:switch=${oxy.slots}>
-										<table class="table">
-											<thead class="thead-grey">
-												<tr>
-													<th>Date</th>
-													<th>Seat</th>
-
-												</tr>
-											</thead>
-											<tbody>
-												<tr th:each="slot : ${oxy.slots}">
-													<td th:text="${slot.date}"></td>
-													<td th:text="${slot.seat}"></td>
-												</tr>
-										</table>
-
-									</div>
-								</td>
-							</tr>
-						</div>
-					</tbody>
-
-				</table>
-				<div th:if="${#lists.isEmpty(availableList)}">
-					<h2>No Seat Available</h2>
 
 				</div>
 
+
+
+
+
 			</div>
+
+			<div id="pinDiv" class="tabcontent">
+
+				<form th:action="@{/cowin}" method="post" align="center">
+
+					<div class="container" style="background-color: white">
+						<input type="text" placeholder="Pincode" name="search"
+							pattern=".{6,}" required title="Pin code should be 6 digits">
+						<input type="submit" class="btn btn-primary" value="Search"
+							align="center">
+					</div>
+				</form>
+				<br>
+
+				<h5 align=center>Subscribe for Email Notification</h5>
+				<form th:action="@{/subscribe}" method="post">
+
+					<div class="container" style="background-color: white">
+						<input type="text" placeholder="Pincode" name="pincode"
+							pattern=".{6,}" required title="Pin code should be 6 digits">
+						<input type="text" placeholder="Email"
+							pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,3}$"
+							title="Please Provide the valid email" name="email" required>
+					</div>
+
+					<div class="container">
+						<input type="submit" class="btn btn-primary" value="Subscribe">
+					</div>
+				</form>
+			</div>
+
 		</div>
 	</div>
 
+	<br>
 
+	<div class="container" th:switch="${availableList}">
+		<br> <br> <br>
+		<div>
+			<h2 th:case="null"></h2>
+			<div th:case="*">
+				<div th:each="oxy : ${availableList}">
+					<table id="mainTable">
+
+						<tr>
+							<th th:text="${oxy.name}"></th>
+						</tr>
+
+						<tr>
+							<th th:text="${oxy.address}"></th>
+						</tr>
+						<tr th:switch=${oxy.slots}>
+							<table id="customers">
+								<tr>
+									<th>Date</th>
+									<th>Seat</th>
+								</tr>
+								<tr th:each="slot : ${oxy.slots}">
+									<td th:text="${slot.date}"></td>
+									<td th:text="${slot.seat}"></td>
+								</tr>
+							</table>
+						</tr>
+
+					</table>
+				</div>
+				<div class="container" th:if="${#lists.isEmpty(availableList)}">
+					<h2>No Seat Available</h2>
+				</div>
+			</div>
+		</div>
+
+
+
+	</div>
 
 	<script
 		th:src="@{assets/bootstrap-select-1.13.9/dist/js/bootstrap-select.js}">
