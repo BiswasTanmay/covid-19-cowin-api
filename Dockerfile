@@ -1,6 +1,7 @@
 FROM maven:3.5-jdk-11 as builder
 
-COPY ./covid-19-cowin-api /covid-19-cowin-api
+COPY ./src /covid-19-cowin-api/src
+COPY ./pom.xml /covid-19-cowin-api/
 
 WORKDIR ./covid-19-cowin-api
 
