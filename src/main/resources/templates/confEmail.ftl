@@ -7,7 +7,7 @@
 <body>
 	<br> <br>Hi,<br>
 	<p>Thank you for the subscription.
-	<p>You have subscribed for <b>${bodyText}</b>.
+	<p>You have subscribed for <b>${dose}</b>, area : <b>${bodyText}</b>
 	<p>You will get notified every hour.
 	<br>
 	<br>

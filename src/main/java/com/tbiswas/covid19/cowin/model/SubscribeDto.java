@@ -7,6 +7,7 @@ public class SubscribeDto {
 	private String email;
 	private String pin;
 	private String type;
+	private String doseType;
 
 	public String getEmail() {
 		return email;
@@ -31,5 +32,15 @@ public class SubscribeDto {
 	public void setType(String type) {
 		this.type = type;
 	}
+
+	public String getDoseType() {
+		return doseType;
+	}
+
+	public void setDoseType(String doseType) {
+		this.doseType = doseType;
+	}
+
+	
 
 }

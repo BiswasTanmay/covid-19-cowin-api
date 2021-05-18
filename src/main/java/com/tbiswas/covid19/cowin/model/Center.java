@@ -1,5 +1,7 @@
 package com.tbiswas.covid19.cowin.model;
 
+import java.util.Arrays;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import lombok.Data;
@@ -139,5 +141,39 @@ public class Center {
 	public void setSessions(Session[] sessions) {
 		this.sessions = sessions;
 	}
+
+	@Override
+	public String toString() {
+		return "Center [center_id=" + center_id + ", name=" + name + ", address=" + address + ", state_name="
+				+ state_name + ", district_name=" + district_name + ", block_name=" + block_name + ", pincode="
+				+ pincode + ", lat=" + lat + ", longitude=" + longitude + ", from=" + from + ", to=" + to
+				+ ", fee_type=" + fee_type + ", sessions=" + Arrays.toString(sessions) + "]";
+	}
+
+	public Center(String center_id, String name, String address, String state_name, String district_name,
+			String block_name, int pincode, int lat, String longitude, String from, String to, String fee_type,
+			Session[] sessions) {
+		super();
+		this.center_id = center_id;
+		this.name = name;
+		this.address = address;
+		this.state_name = state_name;
+		this.district_name = district_name;
+		this.block_name = block_name;
+		this.pincode = pincode;
+		this.lat = lat;
+		this.longitude = longitude;
+		this.from = from;
+		this.to = to;
+		this.fee_type = fee_type;
+		this.sessions = sessions;
+	}
+
+	public Center() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+	
+	
 
 }

@@ -11,6 +11,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,6 +19,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -41,6 +43,9 @@ public class CovidController {
 
 	@Autowired
 	IEmailService emailService;
+	
+	@Value("${third.part.auth.token}")
+	private String token;
 
 	@PostMapping(value = "cowin")
 	public String searchAvilability(@RequestParam(value = "search", required = false) String pincode,
@@ -70,12 +75,19 @@ public class CovidController {
 
 	@PostMapping(value = "subscribe")
 	public String subscribeByPin(@RequestParam(value = "pincode", required = false) String pincode,
-			@Validated String distBox1, @RequestParam(value = "email", required = false) String email, Model model)
+			@Validated String distBox1, @RequestParam(value = "email", required = false) String email, 
+			@RequestParam(value = "features1", required = false) Boolean checkDose1,
+			@RequestParam(value = "features2", required = false) Boolean checkDose2,
+			Model model)
 			throws Exception {
 
 		try {
 			String emailBody = null;
 			String type = null;
+			
+			String dose = checkDose1==null?(checkDose2==null?"B":"D2"):"D1";
+			
+			
 			if (distBox1 != null) {
 
 				String[] arrOfStr = distBox1.split("_");
@@ -85,15 +97,15 @@ public class CovidController {
 				String distName = arrOfStr[3];
 
 				type = "Y";
-				emailService.subscribeEmail(email, distCode, type);
+				emailService.subscribeEmail(email, distCode, type,dose);
 				emailBody = "State: " + finalStatename + "," + "District: " + distName;
 
-				emailService.confirmationMail(emailBody, email);
+				emailService.confirmationMail(emailBody, email,dose);
 			} else if (pincode != null) {
 				type = "N";
 				emailBody = "Pincode: " + pincode;
-				emailService.subscribeEmail(email, pincode, type);
-				emailService.confirmationMail(emailBody, email);
+				emailService.subscribeEmail(email, pincode, type,dose);
+				emailService.confirmationMail(emailBody, email,dose);
 			}
 
 		} catch (Exception e) {
@@ -107,11 +119,15 @@ public class CovidController {
 	}
 
 	@PostMapping(value = "unsubscribe")
-	public String unsubscribe(@RequestParam(value = "email", required = false) String email, Model model)
+	public String unsubscribe(@RequestParam(value = "email", required = false) String email, 
+			@RequestParam(value = "features1", required = false) Boolean checkDose1,
+			@RequestParam(value = "features2", required = false) Boolean checkDose2, Model model)
 			throws Exception {
 
 		try {
-			emailService.unsubscribeEmail(email);
+			String dose = checkDose1==null?(checkDose2==null?"Both Dose":"Dose 2"):"Dose 1";
+			emailService.unsubscribeEmail(email,checkDose1,checkDose2);
+			emailService.unsubConf(email,dose);
 		} catch (Exception e) {
 			throw new Exception();
 		}
@@ -132,8 +148,10 @@ public class CovidController {
 	private List<StateDto> getStateList() throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		StateListDto stateList = new StateListDto();
-		Document document = Jsoup.connect("https://cdn-api.co-vin.in/api/v2/admin/location/states")
+		Document document = Jsoup.connect("https://cdn-api.co-vin.in/api/v2/admin/location/states").header("authorization", token)
 				.ignoreContentType(true).get();
+		
+		
 
 		Elements bodyElement = document.select("body");
 		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -158,7 +176,7 @@ public class CovidController {
 
 			String[] arrOfStr = id.split("_");
 			String stateCode = arrOfStr[0];
-			document1 = Jsoup.connect("https://cdn-api.co-vin.in/api/v2/admin/location/districts/" + stateCode)
+			document1 = Jsoup.connect("https://cdn-api.co-vin.in/api/v2/admin/location/districts/" + stateCode).header("authorization", token)
 					.ignoreContentType(true).get();
 			Elements bodyElement1 = document1.select("body");
 			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

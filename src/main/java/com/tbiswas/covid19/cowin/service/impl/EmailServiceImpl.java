@@ -2,6 +2,7 @@ package com.tbiswas.covid19.cowin.service.impl;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -77,9 +78,9 @@ public class EmailServiceImpl implements IEmailService {
 
 	@Override
 	@Transactional
-	public void subscribeEmail(String email, String pin, String type) {
-		jdbcTemplate.update("INSERT INTO 5AP58VsI5W.T_SUBSCRIBE_EMAIL(EMAIL_ID,PIN_DIST_CODE,TYPE) VALUES(?,?,?)",
-				email.toUpperCase(), pin, type);
+	public void subscribeEmail(String email, String pin, String type, String dose) {
+		jdbcTemplate.update("INSERT INTO T_SUBSCRIBE_EMAIL(EMAIL_ID,PIN_DIST_CODE,TYPE,DOSE_TYPE) VALUES(?,?,?,?)",
+				email.toUpperCase(), pin, type, dose);
 
 	}
 
@@ -88,7 +89,7 @@ public class EmailServiceImpl implements IEmailService {
 	public void checkAndSendMail() {
 		List<SubscribeDto> fullSubscribeList = null;
 		fullSubscribeList = jdbcTemplate.query(
-				"SELECT d.EMAIL_ID AS email, d.PIN_DIST_CODE AS pin, d.TYPE as type FROM 5AP58VsI5W.T_SUBSCRIBE_EMAIL d ",
+				"SELECT d.EMAIL_ID AS email, d.PIN_DIST_CODE AS pin, d.TYPE as type FROM T_SUBSCRIBE_EMAIL d ",
 				new BeanPropertyRowMapper<SubscribeDto>(SubscribeDto.class));
 
 		List<String> pinCodes = fullSubscribeList.stream().map(SubscribeDto::getPin).distinct()
@@ -139,9 +140,14 @@ public class EmailServiceImpl implements IEmailService {
 			MailRequest request = new MailRequest();
 			request.setFrom("learn.latest.tech.it@gmail.com");
 			List<String> toList = new ArrayList<String>();
+			String unAvMailBod = null;
+			
 			if (typeMap.get(data).equalsIgnoreCase("Y")) {
+				
 				toList = distEmailMap.get(data);
 			} else if (typeMap.get(data).equalsIgnoreCase("N")) {
+				
+				unAvMailBod = "at Pincode: "+data;
 				toList = pinEmailMap.get(data);
 			}
 
@@ -150,22 +156,32 @@ public class EmailServiceImpl implements IEmailService {
 			// MailResponse response = new MailResponse();
 			Map<String, Object> model = new HashMap<>();
 			model.put("Pincode", data);
-
+			model.put("availableList", availableList);
 			if (availableList != null && availableList.size() > 0) {
 				request.setSubject("Vaccine Available");
 				request.setName("Y");
 				model.put("State", availableList.get(0).getState());
 				model.put("Dist", availableList.get(0).getDistrict());
+
 				Template t = selectTemplate(request, data, typeMap);
 				sendEmail(request, model, t);
 
 				System.out.println("+++++++++++++++++++++++++++++++++++++++Email Send with Data");
 
 			} else {
+				LocalTime now = LocalTime.now();
+				int currentHour = now.getHour();
 				request.setSubject("Vaccine Not Available");
 				request.setName("N");
+				model.put("unavBody", unAvMailBod);
 				Template t = selectTemplate(request, data, typeMap);
-				sendEmail(request, model, t);
+				if (String.valueOf(currentHour).equalsIgnoreCase("1")
+						|| String.valueOf(currentHour).equalsIgnoreCase("7")
+						|| String.valueOf(currentHour).equalsIgnoreCase("13")
+						|| String.valueOf(currentHour).equalsIgnoreCase("20")) {
+					sendEmail(request, model, t);
+				}
+
 				System.out.println("=============================Email Send with No data");
 			}
 
@@ -193,28 +209,91 @@ public class EmailServiceImpl implements IEmailService {
 
 	@Override
 	@Transactional
-	public void unsubscribeEmail(String email) {
-		String SQL = "delete from 5AP58VsI5W.T_SUBSCRIBE_EMAIL where EMAIL_ID = ?";
-		jdbcTemplate.update(SQL, email);
+	public void unsubscribeEmail(String email, Boolean checkDose1, Boolean checkDose2) {
+
+		if ((checkDose1 != null && checkDose2 != null) || (checkDose1 == null && checkDose2 == null)) {
+			String SQL = "delete from T_SUBSCRIBE_EMAIL where EMAIL_ID = ?";
+			jdbcTemplate.update(SQL, email);
+
+		} else if (checkDose1 != null || checkDose2 != null) {
+			String keep = checkDose1 == null ? "D1" : "D2";
+			String del = checkDose1 == null ? "D2" : "D1";
+
+			List<SubscribeDto> fullSubscribeList = null;
+			fullSubscribeList = jdbcTemplate.query(
+					"SELECT d.EMAIL_ID AS email, d.PIN_DIST_CODE AS pin, d.TYPE as type, d.DOSE_TYPE as doseType FROM T_SUBSCRIBE_EMAIL d WHERE d.EMAIL_ID = ?  and d.DOSE_TYPE = ?",
+					new Object[] { email.toUpperCase(), "B" },
+					new BeanPropertyRowMapper<SubscribeDto>(SubscribeDto.class));
+
+			if (fullSubscribeList == null || fullSubscribeList.isEmpty()) {
+
+				String SQL = "delete from T_SUBSCRIBE_EMAIL where EMAIL_ID = ? and DOSE_TYPE = ?";
+				jdbcTemplate.update(SQL, email, del);
+
+			} else {
+
+				String sqlUpdate = "update T_SUBSCRIBE_EMAIL set DOSE_TYPE = ? where EMAIL_ID = ? AND DOSE_TYPE = ?";
+				jdbcTemplate.update(sqlUpdate, keep, email.toUpperCase(), "B");
+
+				String sqlDelete = "delete from T_SUBSCRIBE_EMAIL where EMAIL_ID = ? and DOSE_TYPE = ?";
+				jdbcTemplate.update(sqlDelete, email.toUpperCase(), del);
+
+			}
+
+		}
 
 	}
 
 	@Override
-	public void confirmationMail(String emailBody, String email) {
+	public void confirmationMail(String emailBody, String email, String dose) {
 		MailRequest request = new MailRequest();
 		Map<String, Object> model = new HashMap<>();
 		Template t = null;
 		try {
-			
+
 			List<String> toList = new ArrayList<String>();
 			toList.add(email);
 			String[] toArr = new String[toList.size()];
-			toArr =  toList.toArray(toArr);
+			toArr = toList.toArray(toArr);
 			request.setFrom("learn.latest.tech.it@gmail.com");
 			request.setTo(toArr);
 			request.setSubject("Thank you for subscription!");
 			request.setName("Y");
 			t = config.getTemplate("confEmail.ftl");
+			model.put("bodyText", emailBody);
+			String doseType = null;
+			if (dose.equalsIgnoreCase("B")) {
+				doseType = "Both Dose";
+			} else if (dose.equalsIgnoreCase("D1")) {
+				doseType = "Dose 1";
+			} else if (dose.equalsIgnoreCase("D2")) {
+				doseType = "Dose 2";
+			}
+			model.put("dose", doseType);
+			sendEmail(request, model, t);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	@Override
+	public void unsubConf(String email, String dose) {
+		MailRequest request = new MailRequest();
+		Map<String, Object> model = new HashMap<>();
+		Template t = null;
+		try {
+			String emailBody = "Your unsubscription is done for " + dose
+					+ ". You will not receive any email notification further for this case.";
+			List<String> toList = new ArrayList<String>();
+			toList.add(email);
+			String[] toArr = new String[toList.size()];
+			toArr = toList.toArray(toArr);
+			request.setFrom("learn.latest.tech.it@gmail.com");
+			request.setTo(toArr);
+			request.setSubject("Unsubscription Completed!");
+			request.setName("Y");
+			t = config.getTemplate("unsub.ftl");
 			model.put("bodyText", emailBody);
 			sendEmail(request, model, t);
 		} catch (IOException e) {

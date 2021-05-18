@@ -6,7 +6,14 @@
 
 <body>
 	<br> <br>Hi,<br>
-	<p>Vaccine is not available at ${unavBody}.
+	<p>Thank you for the request.
+	<p>${bodyText}
+	
+	<br>
+	<p>If you did not unsubscribe, please visit <a href="http://35.200.204.248/cowin">Covid Vaccine Alert</a> website and subscribe again.
+	
+	
+	<p>Thank you.
 	
 	
 </body>

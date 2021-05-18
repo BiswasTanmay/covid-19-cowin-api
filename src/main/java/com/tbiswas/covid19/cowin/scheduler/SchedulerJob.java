@@ -15,7 +15,7 @@ public class SchedulerJob {
 	@Autowired
 	IEmailService emailSending;
 	
-	@Scheduled(fixedRateString = "3600000")
+	//@Scheduled(fixedRateString = "10000")
 	public void checkAndSendEmail() {
 		emailSending.checkAndSendMail();
 		

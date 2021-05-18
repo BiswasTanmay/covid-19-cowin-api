@@ -127,7 +127,7 @@ input[type=submit]:hover {
 	border: 1px solid #ccc;
 	background-color: #f1f1f1;
 	width: 30%;
-	height: 480px;
+	height: 500px;
 }
 
 * {
@@ -166,7 +166,7 @@ input[type=submit]:hover {
 	border: 1px solid #ccc;
 	width: 70%;
 	border-left: none;
-	height: 480px;
+	height: 500px;
 }
 
 table {
@@ -190,9 +190,9 @@ select {
 	box-sizing: border-box;
 }
 
-#customers table{
-  border: 4px solid #ddd;
-  padding: 8px;
+#customers table {
+	border: 4px solid #ddd;
+	padding: 8px;
 }
 
 #customers {
@@ -222,6 +222,19 @@ select {
 	color: white;
 }
 
+input[type=button] {
+	background-color: #FFC002;
+	color: white;
+	border: none;
+	width: 50%;
+	padding: 12px;
+	margin: 8px 0;
+	display: inline-block;
+	border: 1px solid #ccc;
+	box-sizing: border-box;
+	margin-left: 50%";
+}
+
 #mainTable th {
 	padding-top: 12px;
 	padding-bottom: 12px;
@@ -229,6 +242,7 @@ select {
 	background-color: #04AA6D;
 	color: white;
 }
+
 #mainTable td, #mainTable th {
 	border: 1px solid #ddd;
 	padding: 8px;
@@ -261,7 +275,10 @@ select {
 						id="email" align="center"
 						pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,3}$"
 						title="Please Provide the valid email" placeholder="Email"
-						required></input> <input type="submit" class="btn btn-primary"
+						required></input> <input type="checkbox"
+						th:checked="${feat1} == 3" name="features1"> Dose 1 </input> <input
+						type="checkbox" th:checked="${feat2} == 3" name="features2">
+					Dose 2 </input> <input type="submit" class="btn btn-primary"
 						value="Unsubscribe" align="center">
 				</form>
 
@@ -298,8 +315,10 @@ select {
 							placeholder="Email"
 							pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,3}$"
 							title="Please Provide the valid email" name="email" required>
-						<input type="submit" class="btn btn-primary" value="Subscribe"
-							align="center">
+						<input type="checkbox" th:checked="${feat1} == 3" name="features1">
+						Dose 1 </input> <input type="checkbox" th:checked="${feat2} == 3"
+							name="features2"> Dose 2 </input> <input type="submit"
+							class="btn btn-primary" value="Subscribe" align="center">
 					</form>
 
 				</div>
@@ -332,6 +351,11 @@ select {
 						<input type="text" placeholder="Email"
 							pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,3}$"
 							title="Please Provide the valid email" name="email" required>
+						<div align="center">
+							<input type="checkbox" th:checked="${feat1} == 3"
+								name="features1"> Dose 1 </input> <input type="checkbox"
+								th:checked="${feat2} == 3" name="features2"> Dose 2 </input>
+						</div>
 					</div>
 
 					<div class="container">
@@ -350,6 +374,14 @@ select {
 		<div>
 			<h2 th:case="null"></h2>
 			<div th:case="*">
+				<div class="container" style="text-align: center">
+					<input type="button"
+						onclick="window.open('https://selfregistration.cowin.gov.in/')"
+						th:target="_blank" class="btn btn-primary"
+						value="Book slot in Cowin" align="center" />
+
+
+				</div>
 				<div th:each="oxy : ${availableList}">
 					<table id="mainTable">
 
@@ -365,10 +397,16 @@ select {
 								<tr>
 									<th>Date</th>
 									<th>Seat</th>
+									<th>Dose 1</th>
+									<th>Dose 2</th>
+									<th>Age</th>
 								</tr>
 								<tr th:each="slot : ${oxy.slots}">
 									<td th:text="${slot.date}"></td>
 									<td th:text="${slot.seat}"></td>
+									<td th:text="${slot.dose1}"></td>
+									<td th:text="${slot.dose2}"></td>
+									<td th:text="${slot.min_age}+'+'"></td>
 								</tr>
 							</table>
 						</tr>
