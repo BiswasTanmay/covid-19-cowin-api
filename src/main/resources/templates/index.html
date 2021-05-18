@@ -400,6 +400,8 @@ input[type=button] {
 									<th>Dose 1</th>
 									<th>Dose 2</th>
 									<th>Age</th>
+									<th>Vaccine Type</th>
+									
 								</tr>
 								<tr th:each="slot : ${oxy.slots}">
 									<td th:text="${slot.date}"></td>
@@ -407,6 +409,7 @@ input[type=button] {
 									<td th:text="${slot.dose1}"></td>
 									<td th:text="${slot.dose2}"></td>
 									<td th:text="${slot.min_age}+'+'"></td>
+									<td th:text="${slot.vaccine}"></td>
 								</tr>
 							</table>
 						</tr>
